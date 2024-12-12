@@ -43,7 +43,7 @@ class SplitMP4():
 
     # Example usage
     def __call__(self):
-        input_file = f'wheel_of_time_s01_e01'  # Replace with your input file path without the suffix .mp4
+        input_file = f'wheel_of_time_full_s01_e05'  # Replace with your input file path without the suffix .mp4
         self.split_video(input_file)
 
 SplitMP4()()

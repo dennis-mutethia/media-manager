@@ -13,19 +13,14 @@ class SplitVideoWithWatermark():
     def move_watermark(self, t):
         # Define the positions for the watermark (top-left, top-right, bottom-right, bottom-left)
         positions = [
-            ('left', 'top'),  
-            ('top'),               
-            ('right', 'top'),               
-            ('right'),               
-            ('right', 'bottom'),               
-            ('bottom'),                        
-            ('left', 'bottom'),                    
-            ('left')     
-            #('center'),       
+            ('left', 'top'),           # Top-left
+            ('right', 'top'),          # Top-right
+            ('right', 'bottom'),       # Bottom-right
+            ('left', 'bottom')         # Bottom-left
         ]
     
         # Cycle through the positions
-        return positions[int(np.floor(t / 0.5) % 8)]  # Modulo 8 to loop through the positions
+        return positions[int(np.floor(t / (part.duration / 4)) % 4)]  # Modulo 4 to loop through the positions
 
  
     def execute(self, input_video, part_duration, watermark_text):
@@ -49,21 +44,21 @@ class SplitVideoWithWatermark():
             end_time = min(start_time + part_duration, video_duration)
             part = video.subclipped(start_time, end_time)
             
-            watermark = TextClip(
-                text=watermark_text, 
+            watermark_top = TextClip(
+                text='TIPSPESA', 
                 font='ALGER.TTF', 
-                font_size=16, 
+                font_size=48, 
                 color='aqua'
-            ).with_duration(part.duration).with_position('center').with_opacity(0.5)
-            
-            # Set the position of the watermark to follow the movement function
-            watermark = watermark.with_position(lambda t: self.move_watermark(t))
-
-            # Combine the video with the animated watermark
-            watermarked_part = CompositeVideoClip([part, watermark])
+            ).with_duration(part.duration).with_position('top').with_opacity(0.1)
+            watermark_bottom = TextClip(
+                text='MOVIES', 
+                font='ALGER.TTF', 
+                font_size=48, 
+                color='aqua'
+            ).with_duration(part.duration).with_position('bottom').with_opacity(0.1)
 
             # Combine the video part with all watermark text clips
-            #watermarked_part = CompositeVideoClip([part, watermark_top_left, watermark_top_right, watermark_bottom_left, watermark_bottom_right, watermark_center])
+            watermarked_part = CompositeVideoClip([part, watermark_top, watermark_bottom])
 
             # Define output path for the part
             part_filename = os.path.join(f'{self.destination_folder}/{input_video}', f"{input_video}_part_{part_index}.mp4")
@@ -71,9 +66,7 @@ class SplitVideoWithWatermark():
             watermarked_part.write_videofile(part_filename, codec="libx264", audio_codec="aac")
 
             part_index += 1
-            
-            return
-                        
+                                    
         video.close()
 
     def generate_srt(self, video_file, output_srt):
@@ -135,7 +128,7 @@ class SplitVideoWithWatermark():
         input_video = "wheel_of_time_s01_e01"  # Replace with your input video file
 
         part_duration = 239  # Duration of each part in seconds (4 minutes)
-        watermark_text = "TIPSPESA"  # Replace with your watermark text
+        watermark_text = "TIPSPESA MOVIES"  # Replace with your watermark text
 
         self.execute(input_video, part_duration, watermark_text)
 
