@@ -1,12 +1,33 @@
+
+import os
+import numpy as np
 from moviepy import CompositeVideoClip
 from moviepy.video.io.VideoFileClip import VideoFileClip
 from moviepy.video.VideoClip import TextClip
-import os
 
 class SplitVideoWithWatermark():
     def __init__(self):
         self.destination_folder = '../data' 
-        
+    
+    # Define the animation function for position
+    def move_watermark(self, t):
+        # Define the positions for the watermark (top-left, top-right, bottom-right, bottom-left)
+        positions = [
+            ('left', 'top'),  
+            ('top'),               
+            ('right', 'top'),               
+            ('right'),               
+            ('right', 'bottom'),               
+            ('bottom'),                        
+            ('left', 'bottom'),                    
+            ('left')     
+            #('center'),       
+        ]
+    
+        # Cycle through the positions
+        return positions[int(np.floor(t / 0.5) % 8)]  # Modulo 8 to loop through the positions
+
+ 
     def execute(self, input_video, part_duration, watermark_text):
         """
         Splits a video into parts of a specified duration and adds a watermark to each part.
@@ -28,24 +49,21 @@ class SplitVideoWithWatermark():
             end_time = min(start_time + part_duration, video_duration)
             part = video.subclipped(start_time, end_time)
             
-            # Create watermark text clips for all four corners
-            watermark_top_left = TextClip(text='TIPSPESA', font='ALGER.TTF', font_size=16, color='aqua')\
-                .with_duration(part.duration).with_position(('left', 'top')).with_opacity(0.2)
-            watermark_top_right = TextClip(text='MOVIES', font='ALGER.TTF', font_size=16, color='aqua')\
-                .with_duration(part.duration).with_position(('right', 'top')).with_opacity(0.2)
-            watermark_bottom_left = TextClip(text='WATCH', font='ALGER.TTF', font_size=16, color='aqua')\
-                .with_duration(part.duration).with_position(('left', 'bottom')).with_opacity(0.2)
-            watermark_bottom_right = TextClip(text='FREE', font='ALGER.TTF', font_size=16, color='aqua')\
-                .with_duration(part.duration).with_position(('right', 'bottom')).with_opacity(0.2)
-            watermark_center = TextClip(
-                text='TIPSPESA', 
+            watermark = TextClip(
+                text=watermark_text, 
                 font='ALGER.TTF', 
-                font_size=72, 
+                font_size=16, 
                 color='aqua'
-            ).with_duration(part.duration).with_position('center').with_opacity(0.1)
+            ).with_duration(part.duration).with_position('center').with_opacity(0.5)
+            
+            # Set the position of the watermark to follow the movement function
+            watermark = watermark.with_position(lambda t: self.move_watermark(t))
+
+            # Combine the video with the animated watermark
+            watermarked_part = CompositeVideoClip([part, watermark])
 
             # Combine the video part with all watermark text clips
-            watermarked_part = CompositeVideoClip([part, watermark_top_left, watermark_top_right, watermark_bottom_left, watermark_bottom_right, watermark_center])
+            #watermarked_part = CompositeVideoClip([part, watermark_top_left, watermark_top_right, watermark_bottom_left, watermark_bottom_right, watermark_center])
 
             # Define output path for the part
             part_filename = os.path.join(f'{self.destination_folder}/{input_video}', f"{input_video}_part_{part_index}.mp4")
@@ -54,6 +72,8 @@ class SplitVideoWithWatermark():
 
             part_index += 1
             
+            return
+                        
         video.close()
 
     def generate_srt(self, video_file, output_srt):
@@ -114,8 +134,8 @@ class SplitVideoWithWatermark():
     def __call__(self):
         input_video = "wheel_of_time_s01_e01"  # Replace with your input video file
 
-        part_duration = 240  # Duration of each part in seconds (4 minutes)
-        watermark_text = "TIPSPESA MOVIES"  # Replace with your watermark text
+        part_duration = 239  # Duration of each part in seconds (4 minutes)
+        watermark_text = "TIPSPESA"  # Replace with your watermark text
 
         self.execute(input_video, part_duration, watermark_text)
 
